@@ -1,125 +1,26 @@
 import React, { Component } from 'react';
-import axios from 'axios';
+import { connect } from 'react-redux';
 import { Button, FormGroup, Input, Label, Modal, ModalHeader, ModalBody, ModalFooter, Table } from 'reactstrap';
 
 import './App.css';
+import { addProduct, delProduct, fetchProducts, toggleCreateProductModal, toggleEditProductModal, updateCreateProductData, updateEditProductData, updateProduct } from './store/actions/products';
 
 class App extends Component {
-    state = {
-        products: [],
-
-        createProductData: {
-            name: '',
-            price: '',
-        },
-
-        editProductData: {
-            id: '',
-            name: '',
-            price: '',
-        },
-
-        createProductModal: false,
-        editProductModal: false,
-    };
 
     componentDidMount() {
-        this.getProducts();
-    };
-
-    toggleCreateProductModal() {
-        this.setState({
-            createProductModal: !this.state.createProductModal
-        });
-    };
-
-    toggleEditProductModal() {
-        this.setState({
-            editProductModal: !this.state.editProductModal
-        });
-    };
-
-    getProducts = async () => {
-        try {
-            const productsList = await axios.get('http://localhost:5000/api/products/');
-            this.setState({
-                products: productsList.data
-            })
-        } catch (err) {
-            console.error(err);
-        };
-    };
-
-    addProductHandler = async () => {
-        try {
-            const newProduct = await axios.post('http://localhost:5000/api/products/', this.state.createProductData);
-            const { products } = this.state;
-            products.push(newProduct.data);
-            this.setState({
-                products,
-                createProductModal: false,
-                createProductData: {
-                    name: '',
-                    price: '',
-                }
-            });
-        } catch (err) {
-            console.error(err);
-        };
-    };
-
-    editProductHandler = async (id) => {
-        try {
-            const { products } = this.state;
-            const product = products.find((el) => el.id === id);
-            this.setState({
-                editProductData: {
-                    id: product.id,
-                    name: product.name,
-                    price: product.price,
-                },
-                editProductModal: !this.state.editProductModal,
-            });
-        } catch (err) {
-            console.error(err);
-        };
-    };
-
-    updateProductHandler = async () => {
-        try {
-            const { name, price } = this.state.editProductData;
-            await axios.put('http://localhost:5000/api/products/' + this.state.editProductData.id, {
-                name,
-                price,
-            })
-            this.getProducts();
-            this.setState({
-                editProductModal: !this.state.editProductModal
-            });
-        } catch (err) {
-            console.error(err);
-        };
-    };
-
-    deleteProductHandler = async (id) => {
-        try {
-            await axios.delete('http://localhost:5000/api/products/' + id);
-            this.getProducts();
-        } catch (err) {
-            console.error(err);
-        };
+        this.props.getProducts();
     };
 
     render() {
-        let products = this.state.products.map((product) => {
+        let products = this.props.products.map((product) => {
             return (
                 <tr key={product.id}>
                     <td>{product.id}</td>
                     <td>{product.name}</td>
                     <td>{product.price}</td>
                     <td>
-                        <Button color='secondary' size='sm' outline onClick={this.editProductHandler.bind(this, product.id)}>EDIT</Button>{' '}
-                        <Button color='danger' size='sm' outline onClick={this.deleteProductHandler.bind(this, product.id)}>DELETE</Button>
+                        <Button color='secondary' size='sm' outline onClick={()=>this.props.toggleEditProductModal(product.id)}>EDIT</Button>{' '}
+                        <Button color='danger' size='sm' outline onClick={()=>this.props.delProduct(product.id)}>DELETE</Button>
                     </td>
                 </tr>
             );
@@ -130,63 +31,55 @@ class App extends Component {
                 <br />
                 <h1>List of Products</h1>
                 <br />
-                <Button color='success' outline onClick={this.toggleCreateProductModal.bind(this)}>ADD PRODUCT</Button>
+                <Button color='success' outline onClick={this.props.toggleCreateProductModal}>ADD PRODUCT</Button>
                 <br />
                 <br />
 
-                <Modal isOpen={this.state.createProductModal} toggle={this.toggleCreateProductModal.bind(this)}>
-                    <ModalHeader toggle={this.toggleCreateProductModal.bind(this)}>Please add a new product:</ModalHeader>
+                <Modal isOpen={this.props.createProductModal} toggle={this.props.toggleCreateProductModal}>
+                    <ModalHeader toggle={this.props.toggleCreateProductModal}>Please add a new product:</ModalHeader>
 
                     <ModalBody>
                         <FormGroup>
                             <Label for='name'>Name:</Label>
-                            <Input id='name' placeholder='ex.: AMD Ryzen 5 3600' value={this.state.createProductData.name} onChange={(event) => {
-                                let { createProductData } = this.state;
-                                createProductData.name = event.target.value;
-                                this.setState({ createProductData });
+                            <Input id='name' placeholder='ex.: AMD Ryzen 5 3600' value={this.props.createProductData.name} onChange={(event) => {
+                                this.props.updateCreateProductData({key:'name', value: event.target.value})
                             }} />
                         </FormGroup>
                         <FormGroup>
                             <Label for='price'>Price</Label>
-                            <Input id='price' placeholder='ex.: 1234' value={this.state.createProductData.price} onChange={(event) => {
-                                let { createProductData } = this.state;
-                                createProductData.price = event.target.value;
-                                this.setState({ createProductData });
+                            <Input id='price' placeholder='ex.: 1234' value={this.props.createProductData.price} onChange={(event) => {
+                                this.props.updateCreateProductData({key:'price', value: event.target.value})
                             }} />
                         </FormGroup>
                     </ModalBody>
 
                     <ModalFooter>
-                        <Button color='primary' onClick={this.addProductHandler.bind(this)}>ADD</Button>{' '}
-                        <Button color='secondary' onClick={this.toggleCreateProductModal.bind(this)}>CANCEL</Button>
+                        <Button color='primary' onClick={this.props.addProduct}>ADD</Button>{' '}
+                        <Button color='secondary' onClick={this.props.toggleCreateProductModal}>CANCEL</Button>
                     </ModalFooter>
                 </Modal>
 
-                <Modal isOpen={this.state.editProductModal} toggle={this.toggleEditProductModal.bind(this)}>
-                    <ModalHeader toggle={this.toggleEditProductModal.bind(this)}>Edit product info:</ModalHeader>
+                <Modal isOpen={this.props.editProductModal} toggle={this.props.toggleEditProductModal}>
+                    <ModalHeader toggle={this.props.toggleEditProductModal}>Edit product info:</ModalHeader>
 
                     <ModalBody>
                         <FormGroup>
                             <Label for='name'>Name:</Label>
-                            <Input id='name' value={this.state.editProductData.name} onChange={(event) => {
-                                let { editProductData } = this.state;
-                                editProductData.name = event.target.value;
-                                this.setState({ editProductData });
+                            <Input id='name' value={this.props.editProductData.name} onChange={(event) => {
+                               this.props.updateEditProductData({key:'name', value:event.target.value});
                             }} />
                         </FormGroup>
                         <FormGroup>
                             <Label for='price'>Price</Label>
-                            <Input id='price' value={this.state.editProductData.price} onChange={(event) => {
-                                let { editProductData } = this.state;
-                                editProductData.price = event.target.value;
-                                this.setState({ editProductData });
+                            <Input id='price' value={this.props.editProductData.price} onChange={(event) => {
+                                this.props.updateEditProductData({key:'price', value:event.target.value});
                             }} />
                         </FormGroup>
                     </ModalBody>
 
                     <ModalFooter>
-                        <Button color='primary' onClick={this.updateProductHandler.bind(this)}>UPDATE</Button>{' '}
-                        <Button color='secondary' onClick={this.toggleEditProductModal.bind(this)}>CANCEL</Button>
+                        <Button color='primary' onClick={this.props.updateProduct}>UPDATE</Button>{' '}
+                        <Button color='secondary' onClick={this.props.toggleEditProductModal}>CANCEL</Button>
                     </ModalFooter>
                 </Modal>
 
@@ -209,4 +102,20 @@ class App extends Component {
     };
 };
 
-export default App;
+const mapStateToProps = ({ products: { products, createProductModal, editProductModal, editProductData, createProductData } }) => {
+    return { products, createProductModal, editProductModal, editProductData, createProductData };
+};
+
+const mapDispatchToProps = {
+    getProducts: fetchProducts,
+    addProduct: addProduct,
+    updateProduct: updateProduct,
+    delProduct: (id) => delProduct(id),
+    toggleCreateProductModal: toggleCreateProductModal,
+    toggleEditProductModal: (id)=>toggleEditProductModal(id),
+    updateCreateProductData: (data)=>updateCreateProductData(data),
+    updateEditProductData: (data)=>updateEditProductData(data)
+};
+
+
+export default connect(mapStateToProps, mapDispatchToProps)(App);
