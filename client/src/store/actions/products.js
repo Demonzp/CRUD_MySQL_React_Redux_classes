@@ -6,10 +6,8 @@ export const fetchProducts = () => {
     try {
       const productsList = await axios.get('http://localhost:5000/api/products/');
       dispatch({ type: FETCH_PRODUCTS_REQUEST, payload: productsList.data });
-      return;
     } catch (err) {
       console.error(err);
-      return;
     };
   }
 }
@@ -21,13 +19,11 @@ export const addProduct = () => {
 
       await axios.post('http://localhost:5000/api/products/', product);
       await dispatch(fetchProducts());
-      return;
     } catch (err) {
       console.error(err);
       dispatch(toggleCreateProductModal());
       dispatch(updateCreateProductData({key:'name', value:''}));
       dispatch(updateCreateProductData({key:'price', value:''}));
-      return;
     };
   }
 }
@@ -43,11 +39,9 @@ export const updateProduct = () => {
       });
       
       await dispatch(fetchProducts());
-      return;
     } catch (err) {
       console.error(err);
       dispatch(toggleEditProductModal());
-      return;
     };
   }
 }
@@ -57,10 +51,8 @@ export const delProduct = (id) => {
     try {
       await axios.delete('http://localhost:5000/api/products/' + id);
       dispatch({ type: DEL_PRODUCT, payload: id });
-      return;
     } catch (err) {
       console.error(err);
-      return;
     };
   }
 }
